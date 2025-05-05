@@ -214,9 +214,6 @@
         <div class="nav-left">
             <a href="{{ config.base_url | safe }}" class="blog-title-nav">{{ config.title }}</a>
             {% set posts_section = get_section(path="posts/_index.md") %}
-            {% if posts_section %}
-            <a href="{{ posts_section.permalink | safe }}">Posts</a>
-            {% endif %}
             {% if config.extra.main_menu %}
                 {% for item in config.extra.main_menu %}
                     <a href="{{ get_url(path=item.url) | safe }}">{{ item.name }}</a>
