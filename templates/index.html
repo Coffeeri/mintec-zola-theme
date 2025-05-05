@@ -10,7 +10,7 @@
             <div class="minimal-post-list">
                 {% for page in section.pages %}
                     <div class="minimal-post-item">
-                        {% if page.date %}<span class="minimal-post-date">{{ page.date | date(format="%Y-%m-%d") }}</span> - {% endif %}
+                        {% if page.date %}<span class="minimal-post-date">{{ page.date | date(format="%Y-%m-%d") }}</span> {% endif %}
                         <a href="{{ page.permalink | safe }}" class="minimal-post-title">{{ page.title }}</a>
                     </div>
                 {% endfor %}
