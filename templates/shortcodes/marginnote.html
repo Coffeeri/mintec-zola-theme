@@ -1,0 +1,10 @@
+{# Generates placeholder span & hidden template for JS to create margin notes #}
+{% set note_content = body | default(value=content) %}
+{% if note_content %}
+    <span class="margin-note-placeholder"></span>
+    <template class="margin-note-template">
+      <div class="margin-note">
+        {{ note_content | markdown(inline=true) | safe }}
+      </div>
+    </template>
+{% endif %}

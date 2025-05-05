@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="{{ config.default_language | default(value='en') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.title }}{% endblock title %}</title>
+
+    {% if config.generate_feed and config.feed_filenames %}
+        {% set feed_filename = config.feed_filenames | first %}
+        {% if feed_filename %}
+            <link rel="alternate" type={% if feed_filename == "atom.xml" %}"application/atom+xml"{% else %}"application/rss+xml"{% endif %} title="RSS Feed" href="{{ get_url(path=feed_filename) | safe }}">
+        {% endif %}
+    {% endif %}
+
+    <style>
+        /* --- CSS Variables for Theming --- */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --heading-color: #343a40;
+            --muted-color: #6c757d;
+            --border-color: #dee2e6;
+            --subtle-border-color: #e9ecef;
+            --link-color: #007bff;
+            --link-hover-color: #0056b3;
+            --code-bg-color: #e9ecef;
+            --code-text-color: #212529;
+            --code-border-color: #ced4da;
+            --blockquote-border-color: #adb5bd;
+            --blockquote-text-color: #495057;
+            --tag-bg-color: transparent;
+            --tag-text-color: var(--muted-color);
+            --nav-bg-color: var(--bg-color);
+            --nav-border-color: var(--border-color);
+            --nav-link-color: #495057;
+            --icon-fill: #495057;
+            --icon-hover-fill: var(--link-color);
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --heading-color: #ffffff;
+            --muted-color: #adb5bd;
+            --border-color: #444;
+            --subtle-border-color: #333;
+            --link-color: #60a5fa;
+            --link-hover-color: #93c5fd;
+            --code-bg-color: #2c2c2c;
+            --code-text-color: #e0e0e0;
+            --code-border-color: #444;
+            --blockquote-border-color: #666;
+            --blockquote-text-color: #adb5bd;
+            --tag-bg-color: transparent;
+            --tag-text-color: var(--muted-color);
+            --nav-bg-color: var(--bg-color);
+            --nav-border-color: var(--border-color);
+            --nav-link-color: #adb5bd;
+            --icon-fill: #adb5bd;
+            --icon-hover-fill: var(--link-color);
+        }
+
+        /* --- Basic Reset & Defaults --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { line-height: 1.6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- Layout --- */
+        .container { max-width: 1140px; margin: 0 auto; padding: 0 1rem; width: 100%; }
+        .main-layout { display: flex; gap: 2.5rem; flex-grow: 1; }
+        .content-area { flex: 6; min-width: 0; }
+        .toc-area { flex: 1; position: relative; }
+        .content-row { display: flex; gap: 1.5rem; position: relative; }
+        .margin-note-column { flex: 0 0 240px; padding-top: 0.25rem; position: relative; height: auto; }
+        .main-text-column { min-width: 0; flex: 1; position: relative; }
+
+        /* --- Header, Nav & Footer --- */
+        .main-nav {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+            padding: 0.5rem 0; margin-bottom: 2rem; border-bottom: 1px solid var(--nav-border-color);
+            background-color: var(--nav-bg-color); font-size: 0.95rem;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .main-nav .nav-left, .main-nav .nav-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .main-nav a { color: var(--nav-link-color); text-decoration: none; transition: color 0.2s ease; padding: 0.25rem 0; white-space: nowrap; }
+        .main-nav a:hover { color: var(--link-color); }
+        .main-nav .blog-title-nav { font-weight: 500; color: var(--heading-color); margin-right: 1rem; }
+        .main-nav .nav-right a { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; line-height: 1; color: var(--icon-fill); }
+        .main-nav .nav-right a svg { width: 18px; height: 18px; fill: currentColor; transition: fill 0.2s ease; vertical-align: middle; }
+        .main-nav .nav-right a:hover { color: var(--icon-hover-fill); background-color: var(--subtle-border-color); border-radius: 4px; }
+
+        .dark-mode-toggle {
+            background: none; border: none; color: var(--icon-fill); padding: 0.5rem; border-radius: 50%;
+            cursor: pointer; display: inline-flex; justify-content: center; align-items: center;
+            width: 36px; height: 36px; transition: background-color 0.2s, color 0.2s;
+        }
+        .dark-mode-toggle:hover { background-color: var(--subtle-border-color); color: var(--icon-hover-fill); }
+        .dark-mode-toggle svg { width: 18px; height: 18px; fill: currentColor; vertical-align: middle; }
+        body:not(.dark-mode) .dark-mode-toggle .icon-sun { display: none; }
+        body.dark-mode .dark-mode-toggle .icon-moon { display: none; }
+
+        footer {
+            margin-top: 4rem; padding: 1.5rem 0; text-align: center; font-size: 0.8rem;
+            color: var(--muted-color); border-top: 1px solid var(--border-color);
+            transition: border-color 0.3s, color 0.3s;
+        }
+
+        /* --- Typography & Content Styling --- */
+        h1, h2, h3, h4, h5, h6 { color: var(--heading-color); margin-bottom: 0.75em; line-height: 1.3; scroll-margin-top: 3rem; }
+        h1 { font-size: 2.25rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.75rem; border-bottom: 1px solid var(--subtle-border-color); padding-bottom: 0.3em; margin-top: 2rem; }
+        h3 { font-size: 1.4rem; margin-top: 1.5rem; }
+        article :is(h1, h2):first-of-type { margin-top: 0; }
+        p { margin-bottom: 1.25rem; }
+        a { color: var(--link-color); text-decoration: underline; transition: color 0.2s ease; }
+        a:hover { color: var(--link-hover-color); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1.25rem; }
+        li { margin-bottom: 0.5rem; }
+        li > ul, li > ol { margin-top: 0.5rem; }
+        pre {
+            background-color: var(--code-bg-color); color: var(--code-text-color); border: 1px solid var(--code-border-color);
+            padding: 1rem; border-radius: 4px; overflow-x: auto;
+            font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.9rem; margin: 1.5rem 0;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        code:not(pre code) {
+            background-color: var(--code-bg-color); color: var(--code-text-color); padding: 0.2em 0.4em;
+            border-radius: 3px; font-size: 0.9em;
+            font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        blockquote {
+            border-left: 4px solid var(--blockquote-border-color); color: var(--blockquote-text-color);
+            padding-left: 1rem; margin: 1.5rem 0; font-style: italic;
+            transition: border-color 0.3s, color 0.3s;
+        }
+        blockquote p { margin-bottom: 0; }
+        time { color: var(--muted-color); }
+
+        /* --- Article Specific Styles --- */
+        article .article-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--subtle-border-color); }
+        article :is(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 3rem; }
+        .post-metadata-condensed { font-size: 0.9rem; color: var(--muted-color); margin-top: 0.25rem; }
+        .post-metadata-condensed time { margin-right: 0.75rem; }
+        .post-metadata-condensed .tag {
+            color: var(--muted-color); background-color: var(--tag-bg-color); padding: 0; border-radius: 0;
+            font-size: 0.9rem; margin-right: 0.5rem; transition: color 0.3s; text-decoration: none;
+        }
+        .post-metadata-condensed .tag:hover { color: var(--link-color); text-decoration: underline; }
+
+        /* --- Margin Note Styling --- */
+        .margin-note-placeholder { display: none; }
+        .margin-note {
+            font-size: inherit; color: var(--muted-color); padding: 0; border: none;
+            transition: color 0.3s; position: absolute; left: 0; width: 100%;
+            background-color: var(--bg-color); margin: 0;
+        }
+        .margin-note p { margin-bottom: 0; line-height: 1.4; }
+
+        /* --- Table of Contents Styling --- */
+        .toc {
+            position: sticky; top: 2rem; align-self: start;
+            max-height: calc(100vh - 4rem); overflow-y: auto; padding-top: 0.25rem;
+        }
+        .toc nav > h3, .toc > h3 {
+            font-size: 0.9rem; font-weight: 600; color: var(--muted-color); text-transform: uppercase;
+            letter-spacing: 0.05em; margin-bottom: 0.75rem; padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--subtle-border-color); transition: color 0.3s, border-color 0.3s;
+        }
+        .toc ul { list-style: none; padding: 0; margin: 0; }
+        .toc li { margin-bottom: 0.5rem; }
+        .toc a {
+            display: block; position: relative; font-size: 0.875rem; color: var(--muted-color); text-decoration: none;
+            transition: color 0.2s ease-in-out, font-weight 0.2s ease-in-out;
+            padding: 0.2rem 0 0.2rem 0.75rem; border-left: none;
+        }
+        .toc a:hover { color: var(--heading-color); }
+        .toc a.active { color: var(--heading-color); font-weight: bold; }
+        .toc ul ul { margin-top: 0.5rem; padding-left: 1rem; }
+
+        /* --- Index/Section Page Minimal List Styles --- */
+        .minimal-post-list { margin-top: 2rem; }
+        .minimal-post-item { margin-bottom: 0.75rem; line-height: 1.4; }
+        .minimal-post-date { color: var(--muted-color); font-size: 0.9em; margin-right: 0.5em; white-space: nowrap; }
+        .minimal-post-title { color: var(--text-color); text-decoration: none; font-weight: 500; }
+        .minimal-post-title:hover { color: var(--link-color); text-decoration: underline; }
+
+        /* --- Responsive --- */
+        @media (max-width: 992px) {
+            .margin-note-column, .toc-area { display: none; }
+            .main-layout { flex-direction: column; gap: 0; }
+            .content-row { flex-direction: column; gap: 0; }
+            .main-text-column { width: 100%; }
+            .content-area { flex: 1; }
+            .main-nav { flex-direction: column; align-items: center; gap: 0.5rem; }
+            .main-nav .nav-left, .main-nav .nav-right { width: 100%; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+            .main-nav .nav-right { margin-bottom: 0; }
+            .main-nav .nav-left a, .main-nav .nav-right a, .dark-mode-toggle { margin: 0.25rem 0.375rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="container main-nav">
+        <div class="nav-left">
+            <a href="{{ config.base_url | safe }}" class="blog-title-nav">{{ config.title }}</a>
+            {% set posts_section = get_section(path="posts/_index.md") %}
+            {% if posts_section %}
+            <a href="{{ posts_section.permalink | safe }}">Posts</a>
+            {% endif %}
+            {% if config.extra.main_menu %}
+                {% for item in config.extra.main_menu %}
+                    <a href="{{ get_url(path=item.url) | safe }}">{{ item.name }}</a>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="nav-right social-links">
+             {% if config.extra.social_links %}
+                {% if config.extra.social_links.github %}
+                    <a href="{{ config.extra.social_links.github }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile">GitHub</a>
+                {% endif %}
+                 {% if config.extra.social_links.linkedin %}
+                    <a href="{{ config.extra.social_links.linkedin }}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile">LinkedIn</a>
+                 {% endif %}
+             {% else %}
+                 {# Provide placeholder links if not configured in config.toml #}
+                <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Example GitHub Profile">(GitHub)</a>
+                <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Example LinkedIn Profile">(LinkedIn)</a>
+             {% endif %}
+
+             {% if config.generate_feed and config.feed_filenames %}
+                 {% set feed_filename = config.feed_filenames | first %}
+                 {% if feed_filename %}
+                 <a href="{{ get_url(path=feed_filename) | safe }}" class="rss-icon-link" aria-label="RSS Feed">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true">
+                       <circle cx="2" cy="6" r="1" />
+                       <path d="m 1,4 a 3,3 0 0 1 3,3 h 1 a 4,4 0 0 0 -4,-4 z" />
+                       <path d="m 1,2 a 5,5 0 0 1 5,5 h 1 a 6,6 0 0 0 -6,-6 z" />
+                     </svg>
+                 </a>
+                 {% endif %}
+             {% endif %}
+
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.7-10.5-10.5 0-3.51 1.713-6.622 4.43-8.564a.75.75 0 01.819.162z" clip-rule="evenodd" /></svg>
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.166 7.758a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" /></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container main-layout">
+        {% block content %}
+        <p>Welcome to the site.</p>
+        {% endblock content %}
+    </div>
+
+    <footer class="container">
+        <p>&copy; {{ now() | date(format="%Y") }} {{ config.title }}.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = Array.from(document.querySelectorAll('.main-text-column :is(h1, h2, h3, h4, h5, h6)[id]'));
+            const tocLinks = Array.from(document.querySelectorAll('.toc a'));
+            const toggleButton = document.getElementById('darkModeToggle');
+            const body = document.body;
+            const marginNotePlaceholders = document.querySelectorAll('span.margin-note-placeholder');
+            const marginNoteTemplates = document.querySelectorAll('template.margin-note-template');
+            const marginNoteColumn = document.querySelector('.margin-note-column');
+            const mainTextColumn = document.querySelector('.main-text-column');
+
+            // Dark Mode Logic
+            if (toggleButton) {
+                const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+                const currentTheme = localStorage.getItem('theme');
+                function applyTheme(theme) { if (theme === 'dark') { body.classList.add('dark-mode'); } else { body.classList.remove('dark-mode'); } }
+                if (currentTheme) { applyTheme(currentTheme); } else if (prefersDarkScheme.matches) { applyTheme('dark'); } else { applyTheme('light'); }
+                toggleButton.addEventListener('click', () => { let newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); });
+                prefersDarkScheme.addEventListener('change', (e) => { if (!localStorage.getItem('theme')) { applyTheme(e.matches ? 'dark' : 'light'); } });
+            }
+
+            // TOC Active Link Highlighting
+            if (tocLinks.length > 0 && sections.length > 0) {
+                let currentActiveSectionId = null;
+                const tocObserver = new IntersectionObserver((entries) => {
+                     let activeId = null;
+                     const visibleSections = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top);
+                     if (visibleSections.length > 0) { activeId = visibleSections[0].target.getAttribute('id'); } else { const scrollY = window.pageYOffset; const triggerPoint = scrollY + window.innerHeight * 0.2; for (let i = sections.length - 1; i >= 0; i--) { const section = sections[i]; if (section.offsetTop < triggerPoint) { activeId = section.getAttribute('id'); break; } } if (!activeId && sections.length > 0) { activeId = sections[0].getAttribute('id'); } }
+                     if (activeId !== currentActiveSectionId) { currentActiveSectionId = activeId; tocLinks.forEach(link => { link.classList.remove('active'); const linkHref = link.getAttribute('href'); if (linkHref && currentActiveSectionId && linkHref.endsWith(`#${currentActiveSectionId}`)) { link.classList.add('active'); } }); }
+                }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+                 sections.forEach(section => { tocObserver.observe(section); });
+            }
+
+            // Margin Note Positioning
+            if (marginNotePlaceholders.length > 0 && marginNoteTemplates.length > 0 && marginNoteColumn && mainTextColumn) {
+                if (marginNotePlaceholders.length !== marginNoteTemplates.length) { console.warn("Margin Note JS: Mismatch between placeholders and templates count."); }
+                marginNotePlaceholders.forEach((placeholder, index) => {
+                    const template = marginNoteTemplates[index];
+                    if (!template) { console.warn(`Margin Note JS: No template found for placeholder index ${index}`); return; }
+                    const anchorElement = placeholder.closest('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, div');
+                    if (anchorElement) {
+                        const anchorOffsetTop = anchorElement.getBoundingClientRect().top + window.scrollY;
+                        const mainColumnOffsetTop = mainTextColumn.getBoundingClientRect().top + window.scrollY;
+                        const noteTopPosition = anchorOffsetTop - mainColumnOffsetTop;
+                        const noteDiv = template.content.firstElementChild.cloneNode(true);
+                        if (noteDiv) {
+                             noteDiv.style.position = 'absolute';
+                             noteDiv.style.top = `${noteTopPosition}px`;
+                             noteDiv.style.left = '0';
+                             noteDiv.style.width = '100%';
+                             marginNoteColumn.appendChild(noteDiv);
+                        } else { console.warn(`Margin Note JS: Template index ${index} has no valid content.`); }
+                    } else { console.warn(`Margin Note JS: Could not find anchor element for placeholder index ${index}`); }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

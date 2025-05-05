@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{# Macro to render the Table of Contents recursively #}
+{% macro render_toc(toc) %}
+    <ul>
+        {% for heading in toc %}
+            <li>
+                <a href="{{ heading.permalink | safe }}">{{ heading.title }}</a>
+                {% if heading.children %}
+                    {# Use 'self::' for recursive calls when defined in the same file #}
+                    {{ self::render_toc(toc=heading.children) }}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro render_toc %}
+
+
+{% block title %}{{ page.title }} | {{ config.title }}{% endblock title %}
+
+{% block content %}
+    <main class="content-area">
+        <article>
+            <header class="article-header">
+                <h1>{{ page.title }}</h1>
+                <div class="post-metadata-condensed">
+                    {% if page.date %}
+                    <time datetime="{{ page.date | date(format="%Y-%m-%d") }}">{{ page.date | date(format="%d.%m.%Y") }}</time>
+                    {% endif %}
+                    {% if page.taxonomies.tags %}
+                        {% for tag in page.taxonomies.tags %}
+                            <a href="{{ get_taxonomy_url(kind="tags", name=tag) | safe }}" class="tag">#{{ tag }}</a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </header>
+
+            <div class="content-row">
+                 <aside class="margin-note-column">
+                    {# Margin notes will be added here by JavaScript #}
+                 </aside>
+                 <div class="main-text-column">
+                    {# Render the main page content, including shortcode triggers/templates #}
+                    {{ page.content | safe }}
+                 </div>
+            </div>
+
+        </article>
+    </main>
+
+    <aside class="toc-area">
+        {% if page.toc %}
+        <nav class="toc">
+            <h3>Contents</h3>
+            {# Call the macro using 'self::' since it's defined in this file #}
+            {{ self::render_toc(toc=page.toc) }}
+        </nav>
+        {% endif %}
+    </aside>
+{% endblock content %}

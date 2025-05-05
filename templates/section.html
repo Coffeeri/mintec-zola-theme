@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section.title }} | {{ config.title }}{% endblock title %}
+
+{% block content %}
+    <main class="content-area">
+        <h1 class="page-title">{{ section.title }}</h1>
+        {% if section.content %}
+            <div class="section-description">
+                {{ section.content | safe }}
+            </div>
+        {% endif %}
+
+        {% if section.pages %}
+            <div class="minimal-post-list">
+                {% for page in section.pages %}
+                     <div class="minimal-post-item">
+                         {% if page.date %}<span class="minimal-post-date">{{ page.date | date(format="%Y-%m-%d") }}</span> - {% endif %}
+                         <a href="{{ page.permalink | safe }}" class="minimal-post-title">{{ page.title }}</a>
+                     </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No posts in this section yet.</p>
+        {% endif %}
+    </main>
+    <aside class="toc-area">
+    </aside>
+{% endblock content %}

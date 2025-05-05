@@ -1,0 +1,16 @@
+# Theme metadata
+name = "Minimal Technical Theme"
+description = "A minimal, three-column Zola theme with margin notes and dark mode toggle, based on the static HTML template."
+version = "0.1.0"
+license = "MIT" 
+author = "Leander Kohler"
+homepage = "https://example.com" # Optional: Link to theme demo or repo
+
+# Minimum Zola version required
+min_version = "0.17.0"
+
+# Theme settings (optional, can be used in templates via `config.extra.theme_options`)
+[extra]
+  # Example setting
+  # show_reading_time = true
+
