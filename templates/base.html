@@ -93,7 +93,7 @@
         .main-nav .nav-left, .main-nav .nav-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
         .main-nav a { color: var(--nav-link-color); text-decoration: none; transition: color 0.2s ease; padding: 0.25rem 0; white-space: nowrap; }
         .main-nav a:hover { color: var(--link-color); }
-        .main-nav .blog-title-nav { font-weight: 500; color: var(--heading-color); margin-right: 1rem; }
+        .main-nav .blog-title-nav { font-weight: bold; color: var(--heading-color); margin-right: 1rem; }
         .main-nav .nav-right a { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; line-height: 1; color: var(--icon-fill); }
         .main-nav .nav-right a svg { width: 18px; height: 18px; fill: currentColor; transition: fill 0.2s ease; vertical-align: middle; }
         .main-nav .nav-right a:hover { color: var(--icon-hover-fill); background-color: var(--subtle-border-color); border-radius: 4px; }
@@ -212,7 +212,7 @@
 <body>
     <nav class="container main-nav">
         <div class="nav-left">
-            <a href="{{ config.base_url | safe }}" class="blog-title-nav">{{ config.title }}</a>
+            <a href="{{ config.base_url | safe }}" class="blog-title-nav">{{ config.title | safe }}</a>
             {% set posts_section = get_section(path="posts/_index.md") %}
             {% if config.extra.main_menu %}
                 {% for item in config.extra.main_menu %}
