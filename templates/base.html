@@ -255,7 +255,7 @@
             .main-text-column { width: 100%; }
             .content-area { flex: 1; }
             .main-nav { flex-direction: column; align-items: center; gap: 0.5rem; }
-            .main-nav .nav-left, .main-nav .nav-right { width: 100%; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+            .main-nav .nav-left, .main-nav .nav-right { width: 100%; justify-content: center, gap: 0.75rem; margin-bottom: 0.5rem; }
             .main-nav .nav-right { margin-bottom: 0; }
             .main-nav .nav-left a, .main-nav .nav-right a, .dark-mode-toggle { margin: 0.25rem 0.375rem; }
         }
@@ -349,28 +349,93 @@
                  sections.forEach(section => { tocObserver.observe(section); });
             }
 
-            // Margin Note Positioning
-            if (marginNotePlaceholders.length > 0 && marginNoteTemplates.length > 0 && marginNoteColumn && mainTextColumn) {
-                if (marginNotePlaceholders.length !== marginNoteTemplates.length) { console.warn("Margin Note JS: Mismatch between placeholders and templates count."); }
+            // Margin Note Positioning - Wait for images to load
+            function validateMarginNoteElements() {
+                if (marginNotePlaceholders.length !== marginNoteTemplates.length) { 
+                    console.warn("Margin Note JS: Mismatch between placeholders and templates count."); 
+                }
+                return marginNotePlaceholders.length > 0 && marginNoteTemplates.length > 0 && marginNoteColumn && mainTextColumn;
+            }
+
+            function createMarginNote(placeholder, template, index) {
+                const anchorElement = placeholder.closest('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, div');
+                if (!anchorElement) {
+                    console.warn(`Margin Note JS: Could not find anchor element for placeholder index ${index}`);
+                    return null;
+                }
+
+                const anchorOffsetTop = anchorElement.getBoundingClientRect().top + window.scrollY;
+                const mainColumnOffsetTop = mainTextColumn.getBoundingClientRect().top + window.scrollY;
+                const noteTopPosition = anchorOffsetTop - mainColumnOffsetTop;
+                
+                const noteDiv = template.content.firstElementChild.cloneNode(true);
+                if (!noteDiv) {
+                    console.warn(`Margin Note JS: Template index ${index} has no valid content.`);
+                    return null;
+                }
+
+                noteDiv.style.position = 'absolute';
+                noteDiv.style.top = `${noteTopPosition}px`;
+                noteDiv.style.left = '0';
+                noteDiv.style.width = '100%';
+                
+                return noteDiv;
+            }
+
+            function positionMarginNotes() {
+                if (!validateMarginNoteElements()) return;
+
+                marginNoteColumn.innerHTML = '';
+                
                 marginNotePlaceholders.forEach((placeholder, index) => {
                     const template = marginNoteTemplates[index];
-                    if (!template) { console.warn(`Margin Note JS: No template found for placeholder index ${index}`); return; }
-                    const anchorElement = placeholder.closest('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, div');
-                    if (anchorElement) {
-                        const anchorOffsetTop = anchorElement.getBoundingClientRect().top + window.scrollY;
-                        const mainColumnOffsetTop = mainTextColumn.getBoundingClientRect().top + window.scrollY;
-                        const noteTopPosition = anchorOffsetTop - mainColumnOffsetTop;
-                        const noteDiv = template.content.firstElementChild.cloneNode(true);
-                        if (noteDiv) {
-                             noteDiv.style.position = 'absolute';
-                             noteDiv.style.top = `${noteTopPosition}px`;
-                             noteDiv.style.left = '0';
-                             noteDiv.style.width = '100%';
-                             marginNoteColumn.appendChild(noteDiv);
-                        } else { console.warn(`Margin Note JS: Template index ${index} has no valid content.`); }
-                    } else { console.warn(`Margin Note JS: Could not find anchor element for placeholder index ${index}`); }
+                    if (!template) { 
+                        console.warn(`Margin Note JS: No template found for placeholder index ${index}`); 
+                        return; 
+                    }
+                    
+                    const noteDiv = createMarginNote(placeholder, template, index);
+                    if (noteDiv) {
+                        marginNoteColumn.appendChild(noteDiv);
+                    }
                 });
             }
+
+            function setupImageLoadTracking() {
+                const images = document.querySelectorAll('.main-text-column img');
+                let imagesLoaded = 0;
+                const totalImages = images.length;
+                
+                function onImageLoadComplete() {
+                    imagesLoaded++;
+                    if (imagesLoaded >= totalImages) {
+                        setTimeout(positionMarginNotes, 50);
+                    }
+                }
+                
+                if (totalImages === 0) {
+                    positionMarginNotes();
+                    return;
+                }
+
+                images.forEach(img => {
+                    if (img.complete) {
+                        onImageLoadComplete();
+                    } else {
+                        img.addEventListener('load', onImageLoadComplete);
+                        img.addEventListener('error', onImageLoadComplete);
+                    }
+                });
+                
+                setTimeout(() => {
+                    if (imagesLoaded < totalImages) {
+                        console.warn('Margin Note JS: Some images took too long to load, positioning anyway');
+                        positionMarginNotes();
+                    }
+                }, 3000);
+            }
+
+            setupImageLoadTracking();
         });
 
             // --- Footnote Logic ---
