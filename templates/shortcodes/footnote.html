@@ -1,0 +1,9 @@
+{# Usage: {{ footnote(text="Footnote content", url="optional_url") }} #}
+{%- set counter_placeholder = '<span class="footnote-counter">?</span>' %} {# JS will replace '?' #}
+{# Use temporary placeholders for href/id; JS will fix them based on order #}
+<sup><a href="#fn-TEMP" id="fnref-TEMP" class="footnote-ref" role="doc-noteref">{{ counter_placeholder | safe }}</a></sup>
+{# The data template no longer needs a unique ID generated here #}
+<template class="footnote-data">
+    <span class="footnote-content">{{ text | markdown(inline=true) | safe }}</span>
+    {% if url %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="footnote-url">{{ url }}</a>{% endif %}
+</template>

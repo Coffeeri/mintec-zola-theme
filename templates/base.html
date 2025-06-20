@@ -195,6 +195,58 @@
         .minimal-post-title { color: var(--text-color); text-decoration: none; font-weight: 500; }
         .minimal-post-title:hover { color: var(--link-color); text-decoration: underline; }
 
+        /* --- Footnotes --- */
+        .footnote-ref {
+            vertical-align: super;
+            font-size: 0.75em;
+            line-height: 1;
+            text-decoration: none;
+            color: var(--link-color);
+            padding: 0 0.1em;
+        }
+        
+        .footnotes-section {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            font-size: 0.9em;
+            color: var(--muted-color);
+        }
+        .footnotes-section h2 {
+            font-size: 1.2rem; /* Smaller heading for this section */
+            border-bottom: none;
+            margin-bottom: 1rem;
+        }
+        #footnotes-list {
+            padding-left: 1.5rem; /* Indent list */
+            list-style-type: decimal; /* Ensure numbered list */
+        }
+        .footnote-item {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+        .footnote-item p { /* Paragraphs within footnotes */
+            margin-bottom: 0.25rem;
+            display: inline; /* Keep content on same line as back-ref */
+        }
+         .footnote-item .footnote-content {
+             margin-right: 0.5em; /* Space between content and URL */
+         }
+        .footnote-item .footnote-url {
+            word-break: break-all; /* Prevent long URLs from overflowing */
+        }
+        .footnote-backref {
+            margin-left: 0.5em;
+            text-decoration: none;
+            color: var(--link-color);
+            font-size: 0.9em;
+        }
+        .footnote-data { /* Keep the template data hidden */
+            display: none;
+        }
+        .footnote-counter { 
+            display: inline;
+        }
+
         /* --- Responsive --- */
         @media (max-width: 992px) {
             .margin-note-column, .toc-area { display: none; }
@@ -320,6 +372,69 @@
                 });
             }
         });
+
+            // --- Footnote Logic ---
+            {% raw %} 
+            const footnoteDataTemplates = document.querySelectorAll('template.footnote-data');
+            const footnotesListContainer = document.getElementById('footnotes-list');
+            const footnoteRefLinks = document.querySelectorAll('a.footnote-ref');
+
+            if (footnoteRefLinks.length !== footnoteDataTemplates.length) {
+                // No need for {{@ inside raw block
+                console.warn(`Footnote mismatch: Found ${footnoteRefLinks.length} reference links but ${footnoteDataTemplates.length} data templates. Check your {{ footnote(...) }} calls.`);
+            }
+
+            if (footnoteDataTemplates.length > 0 && footnotesListContainer && footnoteRefLinks.length === footnoteDataTemplates.length) {
+                footnotesListContainer.innerHTML = ''; // Clear placeholders
+
+                footnoteDataTemplates.forEach((template, index) => {
+                    const count = index + 1;
+                    const contentNode = template.content.querySelector('.footnote-content');
+                    const urlNode = template.content.querySelector('.footnote-url');
+
+                    // Create list item
+                    const listItem = document.createElement('li');
+                    listItem.id = `fn-${count}`;
+                    listItem.classList.add('footnote-item');
+                    listItem.setAttribute('role', 'doc-endnote');
+
+                    if (contentNode) listItem.appendChild(contentNode.cloneNode(true));
+                    if (urlNode) {
+                        listItem.appendChild(document.createTextNode(' '));
+                        listItem.appendChild(urlNode.cloneNode(true));
+                    }
+
+                    const backLink = document.createElement('a');
+                    backLink.href = `#fnref-${count}`;
+                    backLink.textContent = '↩';
+                    backLink.classList.add('footnote-backref');
+                    backLink.setAttribute('aria-label', 'Back to content');
+                    backLink.setAttribute('role', 'doc-backlink');
+                    listItem.appendChild(backLink);
+
+                    footnotesListContainer.appendChild(listItem);
+
+                    // Update the corresponding reference link in the text
+                    const refLink = footnoteRefLinks[index];
+                    if (refLink) {
+                        refLink.href = `#fn-${count}`;
+                        refLink.id = `fnref-${count}`;
+                        const counterSpan = refLink.querySelector('.footnote-counter');
+                        if (counterSpan) {
+                            counterSpan.textContent = count;
+                        } else {
+                            refLink.textContent = count; // Fallback
+                        }
+                    }
+                });
+            } else if (footnotesListContainer) {
+                // Hide section if no footnotes or if counts mismatch
+                const section = footnotesListContainer.closest('.footnotes-section');
+                if (section && (footnoteDataTemplates.length === 0 || footnoteRefLinks.length !== footnoteDataTemplates.length)) {
+                     section.style.display = 'none';
+                }
+            }
+            {% endraw %}
     </script>
 
 </body>
